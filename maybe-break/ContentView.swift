@@ -1,24 +1,4 @@
-//
-//  ContentView.swift
-//  maybe-break
-//
-//  Created by Eric Wang on 2/14/26.
-//
-
 import SwiftUI
 
-struct ContentView: View {
-    var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
-        }
-        .padding()
-    }
-}
-
-#Preview {
-    ContentView()
-}
+// This file is unused — the app runs as a menu bar app via AppDelegate.
+// Kept to avoid breaking the Xcode project file reference.
