@@ -16,6 +16,7 @@ final class BreakManager {
     private(set) var timeRemaining: TimeInterval = 0
     private(set) var breakTimeRemaining: TimeInterval = 0
     private(set) var shortBreaksTaken: Int = 0
+    private(set) var isRunning: Bool = false
 
     var isPaused: Bool { state == .paused }
     var isOnBreak: Bool {
@@ -26,6 +27,7 @@ final class BreakManager {
     private var workTimer: Timer?
     private var breakTimer: Timer?
     private var headsUpTimer: Timer?
+    private var pauseResumeTimer: Timer?
     private var stateBeforePause: BreakState = .working
     private var timeRemainingBeforePause: TimeInterval = 0
     private var settings: AppSettings { AppSettings.shared }
@@ -40,7 +42,39 @@ final class BreakManager {
     }
 
     func start() {
+        isRunning = true
         startWorkTimer()
+    }
+
+    func stop() {
+        stopAllTimers()
+        pauseResumeTimer?.invalidate()
+        pauseResumeTimer = nil
+        isRunning = false
+        state = .working
+        timeRemaining = 0
+        breakTimeRemaining = 0
+        shortBreaksTaken = 0
+        onHeadsUpEnd?()
+        onBreakEnd?()
+    }
+
+    func addTime(_ seconds: TimeInterval) {
+        guard state == .working || state == .headsUp else { return }
+        timeRemaining += seconds
+        if state == .headsUp && timeRemaining > settings.headsUpDuration {
+            onHeadsUpEnd?()
+            state = .working
+        }
+    }
+
+    func pauseFor(_ seconds: TimeInterval) {
+        pause()
+        pauseResumeTimer?.invalidate()
+        pauseResumeTimer = Timer.scheduledTimer(withTimeInterval: seconds, repeats: false) { [weak self] _ in
+            self?.resume()
+            self?.pauseResumeTimer = nil
+        }
     }
 
     func pause() {
@@ -53,6 +87,8 @@ final class BreakManager {
 
     func resume() {
         guard state == .paused else { return }
+        pauseResumeTimer?.invalidate()
+        pauseResumeTimer = nil
         state = stateBeforePause
         if state == .working {
             timeRemaining = timeRemainingBeforePause
@@ -96,7 +132,7 @@ final class BreakManager {
 
     private func startWorkCountdown() {
         workTimer?.invalidate()
-        workTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
+        let timer = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
             guard let self else { return }
             self.timeRemaining -= 1
 
@@ -112,6 +148,8 @@ final class BreakManager {
                 self.beginBreak()
             }
         }
+        RunLoop.main.add(timer, forMode: .common)
+        workTimer = timer
     }
 
     private func beginBreak() {
@@ -127,13 +165,15 @@ final class BreakManager {
 
     private func startBreakCountdown() {
         breakTimer?.invalidate()
-        breakTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
+        let timer = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
             guard let self else { return }
             self.breakTimeRemaining -= 1
             if self.breakTimeRemaining <= 0 {
                 self.endBreak()
             }
         }
+        RunLoop.main.add(timer, forMode: .common)
+        breakTimer = timer
     }
 
     private func endBreak() {
