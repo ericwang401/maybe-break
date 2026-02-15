@@ -157,29 +157,37 @@ private struct MenuItemRow<Content: View>: View {
     let isHoverable: Bool
     let action: () -> Void
     @ViewBuilder let content: Content
-    @State private var isHovered = false
 
     var body: some View {
-        HStack(spacing: 0) {
-            content
-        }
-        .font(.system(size: 13))
-        .foregroundStyle(isHovered ? .white : .primary)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.vertical, 4)
-        .padding(.horizontal, 10)
-        .background(
-            RoundedRectangle(cornerRadius: 4)
-                .fill(isHovered ? Color.accentColor : .clear)
-        )
-        .padding(.horizontal, 5)
-        .contentShape(Rectangle())
-        .onHover { hover in
-            guard isHoverable else { return }
-            isHovered = hover
-        }
-        .onTapGesture {
+        Button {
             action()
+        } label: {
+            HStack(spacing: 0) {
+                content
+            }
+            .font(.system(size: 13))
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, 4)
+            .padding(.horizontal, 10)
+            .contentShape(Rectangle())
         }
+        .buttonStyle(NativeMenuItemStyle())
+        .padding(.horizontal, 5)
+    }
+}
+
+private struct NativeMenuItemStyle: ButtonStyle {
+    @State private var isHovered = false
+
+    private static let highlightColor = Color(nsColor: .selectedContentBackgroundColor)
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .foregroundStyle(isHovered ? .white : .primary)
+            .background(
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(isHovered ? Self.highlightColor : .clear)
+            )
+            .onHover { isHovered = $0 }
     }
 }

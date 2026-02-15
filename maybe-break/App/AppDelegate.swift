@@ -47,7 +47,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         popover = NSPopover()
         popover.contentSize = NSSize(width: 260, height: 10)
         popover.behavior = .transient
-        popover.animates = false
+        popover.animates = true
         popover.contentViewController = NSHostingController(
             rootView: MenuBarMenuView(dismissAction: { [weak self] in
                 self?.closePopover()
