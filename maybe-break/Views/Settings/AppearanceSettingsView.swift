@@ -2,87 +2,110 @@ import SwiftUI
 
 struct AppearanceSettingsView: View {
     @State private var settings = AppSettings.shared
-
-    @State private var startColor = AppSettings.shared.gradientStartColor
-    @State private var endColor = AppSettings.shared.gradientEndColor
-    @State private var messagesEnabled = AppSettings.shared.customMessagesEnabled
-    @State private var messages = AppSettings.shared.customMessages
     @State private var newMessage = ""
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            Text("Appearance")
-                .font(.title2.bold())
+        SettingsDetailPage(title: "Appearance") {
+            // MARK: Background
+            SettingsSection("Background") {
+                SettingsPickerRow(
+                    "Style",
+                    selection: Binding(
+                        get: { settings.backgroundStyle },
+                        set: { settings.backgroundStyle = $0 }
+                    ),
+                    options: [
+                        ("Gradient", .gradient),
+                        ("Solid", .solid),
+                    ]
+                )
 
-            GroupBox("Break Background") {
-                VStack(alignment: .leading, spacing: 16) {
-                    HStack(spacing: 24) {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("Start color")
-                                .font(.system(size: 12))
-                                .foregroundStyle(.secondary)
-                            ColorPicker("", selection: $startColor, supportsOpacity: false)
-                                .labelsHidden()
-                                .onChange(of: startColor) { _, val in settings.gradientStartColor = val }
+                SettingsDivider()
+
+                SettingsRow("Colors") {
+                    HStack(spacing: 12) {
+                        ColorPicker("", selection: Binding(
+                            get: { settings.gradientStartColor },
+                            set: { settings.gradientStartColor = $0 }
+                        ), supportsOpacity: false)
+                        .labelsHidden()
+
+                        if settings.backgroundStyle == .gradient {
+                            ColorPicker("", selection: Binding(
+                                get: { settings.gradientEndColor },
+                                set: { settings.gradientEndColor = $0 }
+                            ), supportsOpacity: false)
+                            .labelsHidden()
                         }
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("End color")
-                                .font(.system(size: 12))
-                                .foregroundStyle(.secondary)
-                            ColorPicker("", selection: $endColor, supportsOpacity: false)
-                                .labelsHidden()
-                                .onChange(of: endColor) { _, val in settings.gradientEndColor = val }
-                        }
-                        Spacer()
-                        // Preview
-                        RoundedRectangle(cornerRadius: 8)
+
+                        RoundedRectangle(cornerRadius: 6)
                             .fill(
-                                LinearGradient(
-                                    colors: [startColor, endColor],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
+                                settings.backgroundStyle == .gradient
+                                    ? LinearGradient(
+                                        colors: [settings.gradientStartColor, settings.gradientEndColor],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                    : LinearGradient(
+                                        colors: [settings.gradientStartColor, settings.gradientStartColor],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
                             )
-                            .frame(width: 100, height: 60)
+                            .frame(width: 48, height: 28)
                             .overlay(
-                                RoundedRectangle(cornerRadius: 8)
+                                RoundedRectangle(cornerRadius: 6)
                                     .stroke(.white.opacity(0.2), lineWidth: 1)
                             )
                     }
                 }
-                .padding(4)
+
+                SettingsDivider()
+
+                SettingsToggleRow(
+                    "Blur Background",
+                    subtitle: "Apply blur effect behind break screen",
+                    isOn: Binding(
+                        get: { settings.blurBackground },
+                        set: { settings.blurBackground = $0 }
+                    )
+                )
             }
 
-            GroupBox("Custom Messages") {
-                VStack(alignment: .leading, spacing: 12) {
-                    Toggle("Enable custom messages for breaks", isOn: $messagesEnabled)
-                        .onChange(of: messagesEnabled) { _, val in settings.customMessagesEnabled = val }
+            // MARK: Custom Messages
+            SettingsSection("Custom Messages") {
+                SettingsToggleRow(
+                    "Show Messages During Breaks",
+                    isOn: Binding(
+                        get: { settings.customMessagesEnabled },
+                        set: { settings.customMessagesEnabled = $0 }
+                    )
+                )
 
-                    if messagesEnabled {
-                        VStack(alignment: .leading, spacing: 6) {
-                            ForEach(Array(messages.enumerated()), id: \.offset) { index, message in
-                                HStack {
-                                    Text(message)
-                                        .font(.system(size: 13))
-                                    Spacer()
-                                    Button {
-                                        messages.remove(at: index)
-                                        settings.customMessages = messages
-                                    } label: {
-                                        Image(systemName: "minus.circle.fill")
-                                            .foregroundStyle(.red.opacity(0.7))
-                                    }
-                                    .buttonStyle(.plain)
+                if settings.customMessagesEnabled {
+                    SettingsDivider()
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        ForEach(Array(settings.customMessages.enumerated()), id: \.offset) { index, message in
+                            HStack {
+                                Text(message)
+                                    .font(.system(size: 13))
+                                Spacer()
+                                Button {
+                                    var msgs = settings.customMessages
+                                    msgs.remove(at: index)
+                                    settings.customMessages = msgs
+                                } label: {
+                                    Image(systemName: "minus.circle.fill")
+                                        .foregroundStyle(.red.opacity(0.7))
                                 }
-                                .padding(.vertical, 4)
-                                .padding(.horizontal, 8)
-                                if index < messages.count - 1 {
-                                    Divider()
-                                }
+                                .buttonStyle(.plain)
+                            }
+                            .padding(.vertical, 2)
+                            if index < settings.customMessages.count - 1 {
+                                Divider()
                             }
                         }
-                        .padding(6)
-                        .background(RoundedRectangle(cornerRadius: 6).fill(.background))
 
                         HStack {
                             TextField("Add a message...", text: $newMessage)
@@ -90,27 +113,47 @@ struct AppearanceSettingsView: View {
                                 .onSubmit { addMessage() }
                             Button(action: addMessage) {
                                 Image(systemName: "plus.circle.fill")
+                                    .foregroundStyle(.green)
                             }
+                            .buttonStyle(.plain)
                             .disabled(newMessage.trimmingCharacters(in: .whitespaces).isEmpty)
                         }
 
-                        Text("A random message will be shown during each break")
+                        Text("A random message is shown during each break")
                             .font(.system(size: 11))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(.tertiary)
                     }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
                 }
-                .padding(4)
             }
 
-            Spacer()
+            // MARK: Alert Position
+            SettingsSection("Alert Position") {
+                SettingsCardPicker(
+                    selection: Binding(
+                        get: { settings.alertPosition },
+                        set: { settings.alertPosition = $0 }
+                    ),
+                    options: [
+                        ("Top Left", "rectangle.topthird.inset.filled", AlertPosition.topLeft),
+                        ("Top Right", "rectangle.topthird.inset.filled", AlertPosition.topRight),
+                        ("Bottom Left", "rectangle.bottomthird.inset.filled", AlertPosition.bottomLeft),
+                        ("Bottom Right", "rectangle.bottomthird.inset.filled", AlertPosition.bottomRight),
+                    ]
+                )
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+            }
         }
     }
 
     private func addMessage() {
         let trimmed = newMessage.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return }
-        messages.append(trimmed)
-        settings.customMessages = messages
+        var msgs = settings.customMessages
+        msgs.append(trimmed)
+        settings.customMessages = msgs
         newMessage = ""
     }
 }

@@ -7,19 +7,21 @@ enum SettingsTab: String, CaseIterable, Identifiable {
     case wellness = "Wellness Reminders"
     case appearance = "Appearance"
     case sounds = "Sound Effects"
+    case keyboardShortcuts = "Keyboard Shortcuts"
     case about = "About"
 
     var id: String { rawValue }
 
     var icon: String {
         switch self {
-        case .general: return "gearshape"
-        case .breakSchedule: return "clock"
-        case .smartPause: return "pause.circle"
-        case .wellness: return "heart"
-        case .appearance: return "paintbrush"
-        case .sounds: return "speaker.wave.2"
-        case .about: return "info.circle"
+        case .general: return "gearshape.fill"
+        case .breakSchedule: return "clock.fill"
+        case .smartPause: return "pause.circle.fill"
+        case .wellness: return "heart.fill"
+        case .appearance: return "paintbrush.fill"
+        case .sounds: return "speaker.wave.2.fill"
+        case .keyboardShortcuts: return "command"
+        case .about: return "info.circle.fill"
         }
     }
 
@@ -31,22 +33,16 @@ enum SettingsTab: String, CaseIterable, Identifiable {
         case .wellness: return .red
         case .appearance: return .pink
         case .sounds: return .orange
+        case .keyboardShortcuts: return .teal
         case .about: return .blue
-        }
-    }
-
-    var section: String {
-        switch self {
-        case .general: return ""
-        case .breakSchedule, .smartPause, .wellness: return "Focus & Wellbeing"
-        case .appearance, .sounds: return "Personalize"
-        case .about: return "maybe-break"
         }
     }
 }
 
 struct SettingsView: View {
     @State private var selectedTab: SettingsTab = .general
+
+    private let sidebarInset = EdgeInsets(top: 2, leading: 0, bottom: 2, trailing: 6)
 
     var body: some View {
         NavigationSplitView {
@@ -65,28 +61,32 @@ struct SettingsView: View {
                 }
 
                 Section("maybe-break") {
+                    sidebarItem(.keyboardShortcuts)
                     sidebarItem(.about)
                 }
             }
             .listStyle(.sidebar)
             .frame(minWidth: 200)
+            .toolbar(removing: .sidebarToggle)
         } detail: {
             detailView
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                .padding(24)
+                .ignoresSafeArea(.all, edges: .top)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .frame(width: 700, height: 500)
+        .navigationSplitViewStyle(.prominentDetail)
+        .toolbar(.hidden)
+        .frame(width: 720, height: 560)
     }
 
     @ViewBuilder
     private func sidebarItem(_ tab: SettingsTab) -> some View {
-        Label {
+        HStack(spacing: 10) {
+            SidebarIcon(systemName: tab.icon, color: tab.iconColor)
             Text(tab.rawValue)
-        } icon: {
-            Image(systemName: tab.icon)
-                .foregroundStyle(tab.iconColor)
+                .font(.system(size: 13))
         }
         .tag(tab)
+        .listRowInsets(sidebarInset)
     }
 
     @ViewBuilder
@@ -98,6 +98,7 @@ struct SettingsView: View {
         case .wellness: WellnessSettingsView()
         case .appearance: AppearanceSettingsView()
         case .sounds: SoundSettingsView()
+        case .keyboardShortcuts: KeyboardShortcutsSettingsView()
         case .about: AboutView()
         }
     }

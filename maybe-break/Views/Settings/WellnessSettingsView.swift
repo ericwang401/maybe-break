@@ -3,79 +3,162 @@ import SwiftUI
 struct WellnessSettingsView: View {
     @State private var settings = AppSettings.shared
 
-    @State private var blinkEnabled = AppSettings.shared.blinkReminderEnabled
-    @State private var blinkInterval = AppSettings.shared.blinkReminderInterval / 60
-    @State private var postureEnabled = AppSettings.shared.postureReminderEnabled
-    @State private var postureInterval = AppSettings.shared.postureReminderInterval / 60
-
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            Text("Wellness Reminders")
-                .font(.title2.bold())
-
-            Text("Gentle, non-intrusive reminders to keep you healthy.")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-
-            GroupBox("Blink Reminder") {
-                VStack(alignment: .leading, spacing: 12) {
-                    Toggle("Enable blink reminders", isOn: $blinkEnabled)
-                        .onChange(of: blinkEnabled) { _, val in
-                            settings.blinkReminderEnabled = val
-                            WellnessManager.shared.restart()
-                        }
-
-                    if blinkEnabled {
-                        HStack {
-                            Text("Remind every")
-                            Spacer()
-                            Picker("", selection: $blinkInterval) {
-                                Text("5 minutes").tag(5.0)
-                                Text("10 minutes").tag(10.0)
-                                Text("15 minutes").tag(15.0)
-                                Text("20 minutes").tag(20.0)
-                            }
-                            .frame(width: 150)
-                            .onChange(of: blinkInterval) { _, val in
-                                settings.blinkReminderInterval = val * 60
+        SettingsDetailPage(title: "Wellness Reminders") {
+            HStack(alignment: .top, spacing: 16) {
+                // Blink Reminder Card
+                VStack(spacing: 0) {
+                    HStack {
+                        Image(systemName: "eye")
+                            .font(.system(size: 20))
+                            .foregroundStyle(.blue)
+                        Text("Blink")
+                            .font(.system(size: 15, weight: .semibold))
+                        Spacer()
+                        Toggle("", isOn: Binding(
+                            get: { settings.blinkReminderEnabled },
+                            set: {
+                                settings.blinkReminderEnabled = $0
                                 WellnessManager.shared.restart()
                             }
-                        }
+                        ))
+                        .labelsHidden()
+                        .toggleStyle(.switch)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+
+                    if settings.blinkReminderEnabled {
+                        Divider().padding(.leading, 16)
+
+                        SettingsPickerRow(
+                            "Interval",
+                            selection: Binding(
+                                get: { settings.blinkReminderInterval },
+                                set: {
+                                    settings.blinkReminderInterval = $0
+                                    WellnessManager.shared.restart()
+                                }
+                            ),
+                            options: [
+                                ("5 min", 300.0),
+                                ("10 min", 600.0),
+                                ("15 min", 900.0),
+                                ("20 min", 1200.0),
+                            ]
+                        )
+
+                        Divider().padding(.leading, 16)
+
+                        SettingsToggleRow(
+                            "Play Sound",
+                            isOn: Binding(
+                                get: { settings.blinkReminderSound },
+                                set: { settings.blinkReminderSound = $0 }
+                            )
+                        )
                     }
                 }
-                .padding(4)
-            }
+                .background(Color(nsColor: .controlBackgroundColor))
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(Color(nsColor: .separatorColor), lineWidth: 0.5)
+                )
 
-            GroupBox("Posture Reminder") {
-                VStack(alignment: .leading, spacing: 12) {
-                    Toggle("Enable posture reminders", isOn: $postureEnabled)
-                        .onChange(of: postureEnabled) { _, val in
-                            settings.postureReminderEnabled = val
-                            WellnessManager.shared.restart()
-                        }
-
-                    if postureEnabled {
-                        HStack {
-                            Text("Remind every")
-                            Spacer()
-                            Picker("", selection: $postureInterval) {
-                                Text("15 minutes").tag(15.0)
-                                Text("30 minutes").tag(30.0)
-                                Text("45 minutes").tag(45.0)
-                                Text("60 minutes").tag(60.0)
-                            }
-                            .frame(width: 150)
-                            .onChange(of: postureInterval) { _, val in
-                                settings.postureReminderInterval = val * 60
+                // Posture Reminder Card
+                VStack(spacing: 0) {
+                    HStack {
+                        Image(systemName: "figure.stand")
+                            .font(.system(size: 20))
+                            .foregroundStyle(.green)
+                        Text("Posture")
+                            .font(.system(size: 15, weight: .semibold))
+                        Spacer()
+                        Toggle("", isOn: Binding(
+                            get: { settings.postureReminderEnabled },
+                            set: {
+                                settings.postureReminderEnabled = $0
                                 WellnessManager.shared.restart()
                             }
-                        }
+                        ))
+                        .labelsHidden()
+                        .toggleStyle(.switch)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+
+                    if settings.postureReminderEnabled {
+                        Divider().padding(.leading, 16)
+
+                        SettingsPickerRow(
+                            "Interval",
+                            selection: Binding(
+                                get: { settings.postureReminderInterval },
+                                set: {
+                                    settings.postureReminderInterval = $0
+                                    WellnessManager.shared.restart()
+                                }
+                            ),
+                            options: [
+                                ("15 min", 900.0),
+                                ("30 min", 1800.0),
+                                ("45 min", 2700.0),
+                                ("60 min", 3600.0),
+                            ]
+                        )
+
+                        Divider().padding(.leading, 16)
+
+                        SettingsToggleRow(
+                            "Play Sound",
+                            isOn: Binding(
+                                get: { settings.postureReminderSound },
+                                set: { settings.postureReminderSound = $0 }
+                            )
+                        )
                     }
                 }
-                .padding(4)
+                .background(Color(nsColor: .controlBackgroundColor))
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(Color(nsColor: .separatorColor), lineWidth: 0.5)
+                )
             }
 
-            Spacer()
+            SettingsSection("Common Settings") {
+                SettingsToggleRow(
+                    "Dim Screen",
+                    subtitle: "Slightly dim screen during reminders",
+                    isOn: Binding(
+                        get: { settings.wellnessDimScreen },
+                        set: { settings.wellnessDimScreen = $0 }
+                    )
+                )
+
+                SettingsDivider()
+
+                SettingsToggleRow(
+                    "Show During Pauses",
+                    subtitle: "Continue wellness reminders while paused",
+                    isOn: Binding(
+                        get: { settings.wellnessShowDuringPauses },
+                        set: { settings.wellnessShowDuringPauses = $0 }
+                    )
+                )
+
+                SettingsDivider()
+
+                SettingsToggleRow(
+                    "Reset After Break",
+                    subtitle: "Reset wellness timers after a break",
+                    isOn: Binding(
+                        get: { settings.wellnessResetAfterBreak },
+                        set: { settings.wellnessResetAfterBreak = $0 }
+                    )
+                )
+            }
         }
     }
 }

@@ -3,25 +3,52 @@ import ServiceManagement
 
 struct GeneralSettingsView: View {
     @State private var settings = AppSettings.shared
-    @State private var launchAtLogin = AppSettings.shared.launchAtLogin
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            Text("General")
-                .font(.title2.bold())
-
-            GroupBox {
-                VStack(alignment: .leading, spacing: 12) {
-                    Toggle("Launch at login", isOn: $launchAtLogin)
-                        .onChange(of: launchAtLogin) { _, newValue in
+        SettingsDetailPage(title: "General") {
+            SettingsSection("Startup") {
+                SettingsToggleRow(
+                    "Launch at Login",
+                    subtitle: "Automatically start when you log in",
+                    isOn: Binding(
+                        get: { settings.launchAtLogin },
+                        set: { newValue in
                             settings.launchAtLogin = newValue
                             updateLoginItem(enabled: newValue)
                         }
-                }
-                .padding(4)
+                    )
+                )
             }
 
-            Spacer()
+            SettingsSection("Menu Bar") {
+                SettingsPickerRow(
+                    "Display Mode",
+                    selection: Binding(
+                        get: { settings.menuBarDisplayMode },
+                        set: { settings.menuBarDisplayMode = $0 }
+                    ),
+                    options: [
+                        ("Time Until Break", .timeUntilBreak),
+                        ("Icon Only", .icon),
+                        ("Icon & Time", .iconAndTime),
+                    ]
+                )
+
+                SettingsDivider()
+
+                SettingsPickerRow(
+                    "Timer Style",
+                    selection: Binding(
+                        get: { settings.timerStyle },
+                        set: { settings.timerStyle = $0 }
+                    ),
+                    options: [
+                        ("Count Down", .countDown),
+                        ("Count Up", .countUp),
+                        ("Progress Bar", .progress),
+                    ]
+                )
+            }
         }
     }
 
